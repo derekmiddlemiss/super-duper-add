@@ -58,10 +58,14 @@ jobs:
       - name: Bump version
         run: poetry version patch
 
-      - name: Commit
+      - name: Get new version
+        run: echo "current_version=$(grep 'version' pyproject.toml | cut -d ' ' -f3 | tr -d '"')" >> $GITHUB_ENV
+
+      - name: Tag and commit
         run: |
           git config user.name "githubactions"
           git config user.email "githubactions@github.com"
+          git tag -a v${{ env.current_version }} -m "v${{ env.current_version }}"
           git add pyproject.toml
           git commit -m "bump version"
-          git push origin main
+          git push --follow-tags origin main
