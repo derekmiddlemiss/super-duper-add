@@ -43,14 +43,23 @@ jobs:
       - name: Fetch repo
         uses: actions/checkout@v3
 
-      - name: Current version
-        run: echo "current_version=$(grep 'version' pyproject.toml | cut -d ' ' -f3 | tr -d '"')" >> $GITHUB_ENV
+      - name: Install poetry
+        run: pipx install poetry
 
-      - name: FragileTech/bump-version
-        uses: FragileTech/bump-version@main
+      - uses: actions/setup-python@v4
         with:
-            current_version: "${{ env.current_version }}"
-            files: pyproject.toml
-            commit_name: githubactions
-            commit_email: githubactions@github.com
-            token: "${{ secrets.GITHUB_TOKEN }}"
+          python-version: '3.11'
+          cache: 'poetry'
+
+      - name: Configure poetry
+        shell: bash
+        run: poetry config virtualenvs.in-project true
+
+      - name: Bump version
+        run: poetry version patch
+
+      - name: Commit
+        run: |
+          git add pyproject.toml
+          git commit -m "bump version"
+          git push origin main
