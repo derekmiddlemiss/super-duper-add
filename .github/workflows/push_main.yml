@@ -53,4 +53,4 @@ jobs:
             files: pyproject.toml
             commit_name: githubactions
             commit_email: githubactions@github.com
-            token: ${{ secrets.GITHUB_TOKEN }}
+            token: "${{ secrets.GITHUB_TOKEN }}"
