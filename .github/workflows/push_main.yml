@@ -60,6 +60,8 @@ jobs:
 
       - name: Commit
         run: |
+          git config user.name "githubactions"
+          git config user.email "githubactions@github.com"
           git add pyproject.toml
           git commit -m "bump version"
           git push origin main
