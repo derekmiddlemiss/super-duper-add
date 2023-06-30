@@ -1,4 +1,4 @@
-name: Bump version and release
+name: Bump version, tag and release
 
 on:
   push:
@@ -34,7 +34,7 @@ jobs:
       - name: Run unit tests
         run: poetry run pytest
 
-  bump-version:
+  bump-version-tag:
     runs-on: ubuntu-latest
     needs: quality
     permissions:
@@ -58,14 +58,42 @@ jobs:
       - name: Bump version
         run: poetry version patch
 
-      - name: Get new version
-        run: echo "current_version=$(grep 'version' pyproject.toml | cut -d ' ' -f3 | tr -d '"')" >> $GITHUB_ENV
+      - name: Get new version after bump
+        run: echo "bumped_version=$(grep 'version' pyproject.toml | cut -d ' ' -f3 | tr -d '"')" >> $GITHUB_ENV
 
       - name: Tag and commit
         run: |
           git config user.name "githubactions"
           git config user.email "githubactions@github.com"
-          git tag -a v${{ env.current_version }} -m "v${{ env.current_version }}"
+          git tag -a v${{ env.bumped_version }} -m "v${{ env.bumped_version }}"
           git add pyproject.toml
           git commit -m "bump version"
           git push --follow-tags origin main
+
+  release:
+    runs-on: ubuntu-latest
+    needs: bump-version-tag
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch repo
+        uses: actions/checkout@v3
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'poetry'
+
+      - name: Configure poetry
+        shell: bash
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry config repositories.test-pypi https://test.pypi.org/legacy/
+          poetry config pypi-token.test-pypi  ${{ secrets.test_pypi_token }}
+
+      - name: Build and publish
+        shell: bash
+        run: poetry publish --build -r test-pypi
